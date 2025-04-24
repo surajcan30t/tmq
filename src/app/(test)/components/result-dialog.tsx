@@ -15,28 +15,28 @@ interface ResultDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onReturn: () => void;
-  score: number;
-  totalQuestions: number;
-  timeTaken: string;
+  // score: number;
+  // totalQuestions: number;
+  // timeTaken: string;
 }
 
 export function ResultDialog({
   isOpen,
   onOpenChange,
   onReturn,
-  score,
-  totalQuestions,
-  timeTaken,
+  // score,
+  // totalQuestions,
+  // timeTaken,
 }: ResultDialogProps) {
-  const scorePercentage = Math.round((score / totalQuestions) * 100);
+  // const scorePercentage = Math.round((score / totalQuestions) * 100);
 
-  const getFeedbackMessage = () => {
-    if (score === totalQuestions) return "Perfect Score!";
-    if (scorePercentage >= 80) return "Excellent work!";
-    if (scorePercentage >= 60) return "Good job!";
-    if (scorePercentage >= 40) return "Nice effort!";
-    return "Better luck next time!";
-  };
+  // const getFeedbackMessage = () => {
+  //   if (score === totalQuestions) return "Perfect Score!";
+  //   if (scorePercentage >= 80) return "Excellent work!";
+  //   if (scorePercentage >= 60) return "Good job!";
+  //   if (scorePercentage >= 40) return "Nice effort!";
+  //   return "Better luck next time!";
+  // };
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
