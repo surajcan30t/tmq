@@ -246,7 +246,7 @@ model OnlineUser {
   caption_image      String?             @db.VarChar(200)
   exam_counter       Int?
   city               String?             @db.VarChar(150)
-  entry_time         DateTime            @default(now()) @db.Timestamp(0)
+  entry_time         DateTime            @default(dbgenerated("'1970-01-01 01:01:01'")) @db.DateTime(0)
   dist               String?             @db.VarChar(150)
   state              String?             @db.VarChar(150)
   pin_code           String?             @db.VarChar(150)
