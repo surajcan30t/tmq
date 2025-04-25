@@ -6,8 +6,8 @@ import { redis } from '@/lib/redis';
 const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const token = authHeader?.split(' ')[1];
+  const cookie = request.headers.get('cookie');
+  const token = cookie?.split('auth-token=')[1];
   const searchParams = request.nextUrl.searchParams;
 
   if (!token) {
@@ -85,13 +85,13 @@ export async function GET(request: NextRequest) {
     //   options: optionsMap[q.id] || [],
     // }));
     type RawRow = {
-      result: Result
+      result: Result;
     };
 
     type Result = {
-      duration: number,
-      questions: QuestionGroup[]
-    }
+      duration: number;
+      questions: QuestionGroup[];
+    };
 
     type Option = {
       option_id: number;
@@ -104,92 +104,149 @@ export async function GET(request: NextRequest) {
       options: Option[];
     };
 
-    const redId = id.toString() + examId.toString();
+    const examUserId = id.toString() + examId.toString();
 
-    const cachedData = await redis.get(redId);
+    const cachedData = await redis.get(examUserId);
 
     if (cachedData !== null) {
+      const parsedCachedData = JSON.parse(cachedData);
+
       console.log('sent cached data');
       return NextResponse.json(
-        { from: 'redis', data: JSON.parse(cachedData) },
+        {
+          questions: parsedCachedData.questions,
+          duration: parsedCachedData.duration,
+          timeElapsed: parsedCachedData.time_elapsed,
+          timeRemaining: parsedCachedData.timeRemaining,
+          keysPressed: parsedCachedData.countKeysPressed,
+        },
         { status: 200 },
       );
     }
 
+    //    const result = await prisma.$queryRaw<RawRow[]>`
+    //    SELECT JSON_OBJECT(
+    //    'duration', (SELECT sec_time FROM exams WHERE id=${examId}),
+    //    'questions', (
+    //        SELECT JSON_ARRAYAGG(
+    //            JSON_OBJECT(
+    //                'question_id', q.id,
+    //                'question', q.description,
+    //                'options', (
+    //                    SELECT JSON_ARRAYAGG(
+    //                        JSON_OBJECT(
+    //                            'option_id', p.id,
+    //                            'text', p.answer,
+    //                            'is_correct', p.correct
+    //                        )
+    //                    )
+    //                    FROM propositions p
+    //                    WHERE p.id_question = q.id
+    //                )
+    //            )
+    //        )
+    //        FROM (
+    //            SELECT
+    //                nq.id,
+    //                nq.description
+    //            FROM (
+    //                SELECT
+    //                    q.id,
+    //                    q.description,
+    //                    q.id_section,
+    //                    q.id_category,
+    //                    l.qns_no,
+    //                    l.id_exam,
+    //                    @row_num := IF(@current_section_level = CONCAT(q.id_section, q.id_category), @row_num + 1, 1) AS row_num,
+    //                    @current_section_level := CONCAT(q.id_section, q.id_category) AS current_section_level
+    //                FROM
+    //                    questions q
+    //                JOIN
+    //                    question_label l
+    //                ON
+    //                    q.id_section = l.id_section AND q.id_category = l.id_category
+    //                CROSS JOIN
+    //                    (SELECT @row_num := 0, @current_section_level := NULL) vars
+    //                ORDER BY
+    //                    q.id_section, q.id_category, RAND()
+    //            ) AS nq
+    //            WHERE nq.row_num <= nq.qns_no AND nq.id_exam = ${examId}
+    //        ) q
+    //      )
+    //    ) AS result;
+    //    `;
+
     const result = await prisma.$queryRaw<RawRow[]>`
-    SELECT JSON_OBJECT(
-    'duration', (SELECT sec_time FROM exams WHERE id=${examId}),
-    'questions', (
-        SELECT JSON_ARRAYAGG(
+SELECT JSON_OBJECT(
+  'duration', (
+    SELECT sec_time FROM exams WHERE id = ${examId}
+  ),
+  'questions', (
+    SELECT JSON_ARRAYAGG(
+      JSON_OBJECT(
+        'question_id', q.id,
+        'question', q.description,
+        'options', (
+          SELECT JSON_ARRAYAGG(
             JSON_OBJECT(
-                'question_id', q.id,
-                'question', q.description,
-                'options', (
-                    SELECT JSON_ARRAYAGG(
-                        JSON_OBJECT(
-                            'option_id', p.id,
-                            'text', p.answer,
-                            'is_correct', p.correct
-                        )
-                    )
-                    FROM propositions p
-                    WHERE p.id_question = q.id
-                )
+              'option_id', p.id,
+              'text', p.answer,
+              'is_correct', p.correct
             )
+          )
+          FROM propositions p
+          WHERE p.id_question = q.id
         )
-        FROM (
-            SELECT 
-                nq.id,
-                nq.description
-            FROM (
-                SELECT 
-                    q.id,
-                    q.description,
-                    q.id_section,
-                    q.id_category,
-                    l.qns_no,
-                    l.id_exam,
-                    @row_num := IF(@current_section_level = CONCAT(q.id_section, q.id_category), @row_num + 1, 1) AS row_num,
-                    @current_section_level := CONCAT(q.id_section, q.id_category) AS current_section_level
-                FROM 
-                    questions q
-                JOIN 
-                    question_label l
-                ON 
-                    q.id_section = l.id_section AND q.id_category = l.id_category
-                CROSS JOIN
-                    (SELECT @row_num := 0, @current_section_level := NULL) vars
-                ORDER BY 
-                    q.id_section, q.id_category, RAND()
-            ) AS nq
-            WHERE nq.row_num <= nq.qns_no AND nq.id_exam = ${examId}
-        ) q
       )
-    ) AS result;
-    `;
+    )
+    FROM (
+      SELECT nq.id, nq.description
+      FROM (
+        SELECT 
+          *,
+          @row_num := IF(@current_section_level = CONCAT(id_section, id_category), @row_num + 1, 1) AS row_num,
+          @current_section_level := CONCAT(id_section, id_category) AS current_section_level
+        FROM (
+          SELECT 
+            q.id,
+            q.description,
+            q.id_section,
+            q.id_category,
+            l.qns_no,
+            l.id_exam
+          FROM questions q
+          JOIN question_label l 
+            ON q.id_section = l.id_section AND q.id_category = l.id_category
+          WHERE l.id_exam = ${examId}
+          ORDER BY q.id_section, q.id_category, RAND()
+        ) AS shuffled
+        CROSS JOIN (SELECT @row_num := 0, @current_section_level := NULL) vars
+      ) AS nq
+      WHERE nq.row_num <= nq.qns_no AND nq.id_exam = ${examId}
+    ) q
+  )
+) AS result`;
+
     if (!result) {
       return NextResponse.json(
-        { status: 500, message: 'Error collecting question ' },
+        { message: 'Error collecting question ' },
         { status: 500 },
       );
     }
     const rawResult = result[0]?.result;
-    console.log('rawresult')
+    console.log('rawresult');
     if (!rawResult) {
-      return NextResponse.json(
-        { status: 500, message: 'Invalid format' },
-        { status: 500 },
-      );
+      return NextResponse.json({ message: 'Invalid format' }, { status: 500 });
     }
 
     // Prepare data for frontend (no correct answers)
     const questions = rawResult.questions.map((q: any, id: number) => ({
-      slNo: id+1,
+      slNo: id + 1,
       ...q,
       options: q.options.map(({ is_correct, ...rest }: any) => rest),
       answeredOption: null,
       appearStatus: 'unvisited',
-      attemptTime: null
+      attemptTime: null,
     }));
 
     // Prepare conf (correct answer map)
@@ -201,13 +258,39 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {});
 
-    await redis.set(redId, JSON.stringify({ questions, conf, duration: rawResult.duration, exam_status: 0, time_elapsed: null , timeRemaining: rawResult.duration}));
+    await redis.set(
+      examUserId,
+      JSON.stringify({
+        questions,
+        conf,
+        duration: rawResult.duration,
+        exam_status: 0,
+        time_elapsed: null,
+        timeRemaining: rawResult.duration,
+        countKeysPressed: 0,
+      }),
+    );
 
-    return NextResponse.json({ from: 'db', data: questions, duration: rawResult.duration }, { status: 200 });
+    const examData = await redis.get(examUserId);
+
+    if (examData === null) return;
+
+    const parsedExamData = JSON.parse(examData);
+
+    return NextResponse.json(
+      {
+        questions: parsedExamData.questions,
+        duration: parsedExamData.duration,
+        timeElapsed: parsedExamData.time_elapsed,
+        timeRemaining: parsedExamData.timeRemaining,
+        keysPressed: parsedExamData.countKeysPressed,
+      },
+      { status: 200 },
+    );
   } catch (err) {
     console.error('::api/get-questions-by-id::', err);
     return NextResponse.json(
-      { status: 500, message: 'Something Went Wrong ' },
+      { message: 'Something Went Wrong ' },
       { status: 500 },
     );
   }
