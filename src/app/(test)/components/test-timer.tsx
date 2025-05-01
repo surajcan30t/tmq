@@ -7,31 +7,34 @@ import { cn } from "@/lib/utils"
 interface TestTimerProps {
   initialTime: number // in seconds
   onTimeUp: () => void
+  onTick?: (remaining: number) => void;
 }
 
-export function TestTimer({ initialTime, onTimeUp }: TestTimerProps) {
+export function TestTimer({ initialTime, onTimeUp, onTick }: TestTimerProps) {
   const [timeLeft, setTimeLeft] = useState(initialTime)
-  const [timerWarning, setTimerWarning] = useState(false)
+  const [timerWarning, setTimerWarning] = useState(initialTime <= 300)
+
+  useEffect(() => {
+    setTimeLeft(initialTime);
+    setTimerWarning(initialTime <= 300);
+  }, [initialTime]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
-        // Add warning when less than 5 minutes left
-        if (prev <= 300 && prev > 299) {
-          setTimerWarning(true)
-        }
-
         if (prev <= 1) {
-          clearInterval(timer)
-          onTimeUp()
-          return 0
+          clearInterval(timer);
+          onTimeUp();
+          return 0;
         }
-        return prev - 1
-      })
-    }, 1000)
+        if (prev === 301) setTimerWarning(true);
+        if (onTick) requestAnimationFrame(() => onTick(prev - 1)); // Update parent
+        return prev - 1;
+      });
+    }, 1000);
 
-    return () => clearInterval(timer)
-  }, [onTimeUp])
+    return () => clearInterval(timer);
+  }, [onTimeUp, onTick]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)

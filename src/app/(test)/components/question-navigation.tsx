@@ -2,12 +2,20 @@
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { AlertCircle, CheckCircle, Circle, HelpCircle } from 'lucide-react';
 
 interface Answers {
   value: string | null;
   type: string;
 }
+
+// interface Question {
+//   // options: Option[];
+//   question: string;
+//   question_id: number;
+//   answeredOption: number | null;
+//   appearStatus: string;
+//   attemptTime: null | string;
+// }
 
 interface QuestionNavigationProps {
   totalQuestions: number;
@@ -30,7 +38,7 @@ export function QuestionNavigation({
       <div className="flex flex-wrap gap-2 justify-start">
         {Array.from({ length: totalQuestions }).map((_, index) => {
           const questionNumber = index + 1;
-          const type = answers[index].type;
+          const type = answers[index].type
           const isCurrent = currentQuestion === questionNumber;
 
           return (
@@ -50,7 +58,7 @@ export function QuestionNavigation({
                       : type === 'unanswered'
                         ? 'bg-red-500 text-primary-foreground'
                         : 'bg-gray-300 text-black',
-                type && !isCurrent && 'opacity-80 hover:opacity-100',
+                type && !isCurrent && 'opacity-80 hover:opacity-100 hover:text-white',
               )}
               onClick={() => onQuestionSelect(questionNumber)}
             >

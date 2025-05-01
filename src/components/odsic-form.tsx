@@ -9,8 +9,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { AlertCircle, Loader } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Form,
@@ -22,11 +22,23 @@ import {
 } from './ui/form';
 
 const formSchema = z.object({
-  userName: z.string().min(2, { message: 'Must enter username' }),
-  // password: z.string().min(2, { message: 'Must enter password' }),
+  name: z.string().min(2, { message: 'Must enter username' }),
+  branch: z.string().min(2, { message: 'Must enter branch' }),
+  collegeName: z.string().min(2, { message: 'Must enter college name' }),
+  contactNo: z.string().min(2, { message: 'Must enter contact number' }),
+  semester: z.string().min(1, { message: 'Must enter semester' }),
 });
 
-const Login = () => {
+interface PersonalInfo {
+  name: string | null,
+  branch: string | null,
+  collegeName: string | null,
+  contactNo: string | null,
+  semester: string | null
+  loginCount: number
+}
+
+const OdsicForm = ({data}: {data: PersonalInfo}) => {
   const router = useRouter();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,8 +46,11 @@ const Login = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      userName: '',
-      // password: '',
+      name: data.name??'',
+      branch: data.branch??'',
+      collegeName: data.collegeName??'',
+      contactNo: data.contactNo??'',
+      semester: data.semester??''
     },
   });
 
@@ -47,7 +62,7 @@ const Login = () => {
       //   method: 'POST',
       //   body: JSON.stringify(values),
       // });
-      const response = await fetch('/api/odsic-signin', {
+      const response = await fetch('/api/odsic-personal-info', {
         method: 'POST',
         body: JSON.stringify(values),
       });
@@ -68,7 +83,7 @@ const Login = () => {
       }
 
       if (response.status === 200) {
-        router.replace('/odsic');
+        router.replace(`/instructions/${200}?exam=ODSIC`);
       }
     } catch {
       setError('Failed to login. Please try again.');
@@ -80,7 +95,7 @@ const Login = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Login</CardTitle>
+
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -94,13 +109,12 @@ const Login = () => {
             <div className="space-y-2">
               <FormField
                 control={form.control}
-                name="userName"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="your.email@example.com"
                         className="bg-white"
                         {...field}
                       />
@@ -110,17 +124,16 @@ const Login = () => {
                 )}
               />
             </div>
-            {/* <div className="space-y-2">
+            <div className="space-y-2">
               <FormField
                 control={form.control}
-                name="password"
+                name="branch"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>Branch</FormLabel>
                     <FormControl>
                       <Input
-                        type="password"
-                        placeholder="********"
+                        placeholder='CSE/CSAIML'
                         className="bg-white"
                         {...field}
                       />
@@ -129,14 +142,68 @@ const Login = () => {
                   </FormItem>
                 )}
               />
-            </div> */}
+            </div>
+            <div className="space-y-2">
+              <FormField
+                control={form.control}
+                name="collegeName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>College Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        className="bg-white"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="space-y-2">
+              <FormField
+                control={form.control}
+                name="contactNo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contact No.</FormLabel>
+                    <FormControl>
+                      <Input
+                        className="bg-white"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="space-y-2">
+              <FormField
+                control={form.control}
+                name="semester"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Semester</FormLabel>
+                    <FormControl>
+                      <Input
+                        className="bg-white"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <Button
               variant={'trident'}
               type="submit"
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? 'Logging in...' : 'Login'}
+              {isLoading ? (<Loader className='animate-spin'/>) : `${data.loginCount === 0 ? 'Start' : 'Resume'} Exam`}
             </Button>
           </form>
         </Form>
@@ -145,4 +212,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default OdsicForm;

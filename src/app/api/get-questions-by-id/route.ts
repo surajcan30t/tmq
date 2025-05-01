@@ -5,10 +5,31 @@ import { redis } from '@/lib/redis';
 
 const prisma = new PrismaClient();
 
+type RawRow = {
+  result: Result;
+};
+
+type Result = {
+  duration: number;
+  questions: QuestionGroup[];
+};
+
+type Option = {
+  option_id: number;
+  text: string;
+};
+
+type QuestionGroup = {
+  question_id: number;
+  question: string;
+  options: Option[];
+};
+
 export async function GET(request: NextRequest) {
-  const cookie = request.headers.get('cookie');
-  const token = cookie?.split('auth-token=')[1];
+  const authHeader = request.headers.get('authorization');
+  const token = authHeader?.split(' ')[1];
   const searchParams = request.nextUrl.searchParams;
+  
 
   if (!token) {
     return NextResponse.json({ message: 'Token available' }, { status: 403 });
@@ -84,25 +105,6 @@ export async function GET(request: NextRequest) {
     //   description: q.description,
     //   options: optionsMap[q.id] || [],
     // }));
-    type RawRow = {
-      result: Result;
-    };
-
-    type Result = {
-      duration: number;
-      questions: QuestionGroup[];
-    };
-
-    type Option = {
-      option_id: number;
-      text: string;
-    };
-
-    type QuestionGroup = {
-      question_id: number;
-      question: string;
-      options: Option[];
-    };
 
     const examUserId = id.toString() + examId.toString();
 
@@ -240,18 +242,23 @@ SELECT JSON_OBJECT(
     }
 
     // Prepare data for frontend (no correct answers)
-    const questions = rawResult.questions.map((q: any, id: number) => ({
+    const questions = rawResult.questions.map((q: QuestionGroup, id: number) => ({
       slNo: id + 1,
       ...q,
-      options: q.options.map(({ is_correct, ...rest }: any) => rest),
+      options: q.options.map(({ ...rest }: Option) => rest),
       answeredOption: null,
+      answeredText: null,
       appearStatus: 'unvisited',
       attemptTime: null,
     }));
 
     // Prepare conf (correct answer map)
-    const conf = rawResult.questions.reduce((acc: any, q: any) => {
-      const correctOption = q.options.find((opt: any) => opt.is_correct === 1);
+    // @ts-expect-error: rawResult.questions may be loosely typed
+    const conf = (rawResult.questions as Array<{
+      question_id: string;
+      options: Array<{ option_id: string; is_correct: number }>;
+    }>).reduce((acc: Record<string, string>, q) => {
+      const correctOption = q.options.find((opt) => opt.is_correct === 1);
       if (correctOption) {
         acc[parseInt(q.question_id)] = correctOption.option_id;
       }

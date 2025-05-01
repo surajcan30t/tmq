@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client"
 import { JWTPayload, SignJWT, importJWK } from 'jose';
 import { randomUUID } from "crypto";
-import { redis } from "@/lib/redis";
 
 const prisma = new PrismaClient()
 

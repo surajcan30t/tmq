@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ResultDialog } from './result-dialog';
 import { SubmitDialog } from './submit-dialog';
@@ -10,10 +10,10 @@ import { ProgressTracker } from './progress-tracker';
 import { TestTimer } from './test-timer';
 // import { testQuestions } from '@/misc/sampleQuestions';
 
-interface Answers{
-  id: number | undefined
-  value: string | null,
-  type: string
+interface Answers {
+  id: number | null;
+  value: string | null;
+  type: string;
 }
 
 interface Option {
@@ -22,52 +22,132 @@ interface Option {
 }
 
 interface Question {
+  slNo: number;
   options: Option[];
   question: string;
   question_id: number;
+  answeredOption: number | null;
+  answeredText: string | null;
+  appearStatus: string;
+  attemptTime: null | string;
 }
 
+const saveToLocalStorage = (answers: Answers[], currentQuestionInd: number) => {
+  const localData = window.localStorage.getItem('ExamData');
+  const parsedLocalData = localData && JSON.parse(localData);
+  parsedLocalData.questions = parsedLocalData.questions.map(
+    (question: Question, index: number) => {
+      const answer = answers[index];
+      return {
+        ...question,
+        answeredOption: answer?.id ?? null,
+        appearStatus: answer?.type ?? 'unvisited',
+        answeredText: answer?.value ?? null,
+        attemptTime:
+          index === currentQuestionInd
+            ? new Date().getTime()
+            : (question.attemptTime ?? null),
+      };
+    },
+  );
+  window.localStorage.setItem('ExamData', JSON.stringify(parsedLocalData));
+};
 
 const MainExam = ({
   testId,
   questions,
+  timeElapsed,
+  timeRemaining,
+  // stateChange
 }: {
   testId: string;
   questions: Question[];
+  timeElapsed: number | null;
+  timeRemaining: number;
+  // stateChange: boolean
 }) => {
+  console.log(timeElapsed)
   const [currentQuestion, setCurrentQuestion] = useState(1); // 1-indexed for user display
   const [answers, setAnswers] = useState<Answers[]>(
-    Array(questions.length).fill({ id: undefined, value: null, type: '' }),
+    Array(questions.length).fill({ id: null, value: null, type: '' }),
   );
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [showResultDialog, setShowResultDialog] = useState(false);
+  const [timeLeftInSeconds, setTimeLeftInSeconds] = useState(timeRemaining * 60);
   // const [score, setScore] = useState(0);
   const [testCompleted, setTestCompleted] = useState(false);
   // const [timeTaken, setTimeTaken] = useState("00:00");
   const router = useRouter();
 
   // Test duration in seconds (60 minutes)
-  const TEST_DURATION = 60 * 30;
+  // const TEST_DURATION = 60 * 30;
 
-  const handleAnswerChange = (value: string, id: number | undefined) => {
-    const newAnswers = [...answers];
-    console.log(
-      'handleanswerchange: ',
-      newAnswers[currentQuestion - 1],
-      ' :: value: ',
-      value,
-    );
-    if (value !== '' && id !== undefined) {
-      newAnswers[currentQuestion - 1] = { id: id, value: value, type: 'answered' };
-      setAnswers(newAnswers);
-    } else {
-      newAnswers[currentQuestion - 1] = { id: undefined, value: null, type: 'unanswered' };
-      setAnswers(newAnswers);
+  useEffect(() => {
+    if (questions) {
+      const updatedAnswers = questions.map((q) => ({
+        id: q.answeredOption,
+        value: q.answeredText,
+        type: q.appearStatus,
+      }));
+      setAnswers(updatedAnswers);
+    }
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      saveDataToBackend();
+    }, 20000); // 20 seconds
+  
+    return () => clearInterval(interval);
+  }, []);
+
+  const saveDataToBackend = async () => {
+    try {
+      const localData = window.localStorage.getItem('ExamData');
+      const parsedLocalData = localData && JSON.parse(localData);
+  
+      await fetch('/api/user-exam-response', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          testId,
+          answers: {
+            ...parsedLocalData,
+            timeRemaining: Math.ceil(timeLeftInSeconds / 60), // Optional: send seconds directly
+          },
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to save data', error);
     }
   };
 
+  const handleAnswerChange = (value: string, id: number | null) => {
+    const newAnswers = [...answers];
+    if (value !== '' && id !== null) {
+      newAnswers[currentQuestion - 1] = {
+        id: id,
+        value: value,
+        type: 'answered',
+      };
+      setAnswers(newAnswers);
+      saveToLocalStorage(newAnswers, currentQuestion - 1);
+    } else {
+      newAnswers[currentQuestion - 1] = {
+        id: null,
+        value: null,
+        type: 'unanswered',
+      };
+      setAnswers(newAnswers);
+      saveToLocalStorage(newAnswers, currentQuestion - 1);
+    }
+    // saveDataToBackend()
+  };
+
   const handleMarkedForReview = (
-    id: number | undefined,
+    id: number | null,
     value: string,
     markedForReviewAnswered: boolean,
   ) => {
@@ -79,18 +159,21 @@ const MainExam = ({
         type: 'answeredmarkedreview',
       };
       setAnswers(newAnswers);
+      saveToLocalStorage(newAnswers, currentQuestion - 1);
     } else {
       newAnswers[currentQuestion - 1] = {
-        id: undefined, 
+        id: null,
         value: null,
         type: 'unansweredmarkedreview',
       };
       setAnswers(newAnswers);
+      saveToLocalStorage(newAnswers, currentQuestion - 1);
     }
   };
 
   const handleNext = () => {
     if (currentQuestion < questions.length) {
+      saveDataToBackend();
       setCurrentQuestion(currentQuestion + 1);
     }
   };
@@ -112,18 +195,14 @@ const MainExam = ({
   };
 
   const handleSubmitTest = () => {
+    saveDataToBackend();
 
-    console.log('::::::::::::::\n', answers);
-
-    // setScore(correctCount);
     setTestCompleted(true);
     setShowResultDialog(true);
   };
 
-  const answeredCount = answers.filter(
-    (answer) => answer.value !== null,
-  ).length;
-  const currentQuestionData = questions[currentQuestion - 1]; // Adjust for 0-indexed array 
+  const answeredCount = answers.filter((answer) => answer.id !== null).length;
+  const currentQuestionData = questions[currentQuestion - 1]; // Adjust for 0-indexed array
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-1">
@@ -131,7 +210,11 @@ const MainExam = ({
         {/* Header with title and timer */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
           <div className="text-2xl font-bold">Assessment in Progress</div>
-          <TestTimer initialTime={TEST_DURATION} onTimeUp={handleTimeUp} />
+          <TestTimer 
+            initialTime={timeRemaining * 60} 
+            onTimeUp={handleTimeUp} 
+            onTick={setTimeLeftInSeconds}
+           />
         </div>
 
         {/* Progress tracker */}
@@ -178,7 +261,7 @@ const MainExam = ({
       <ResultDialog
         isOpen={showResultDialog}
         onOpenChange={setShowResultDialog}
-        onReturn={() => router.push('/dashboard')}
+        onReturn={() => router.push('/')}
         // score={score}
         // totalQuestions={testQuestions.length}
         // timeTaken={timeTaken}

@@ -24,9 +24,9 @@ interface QuestionCardProps {
   question: string;
   options: Option[];
   selectedAnswer: string | null;
-  onAnswerChange: (value: string, id: number | undefined, ) => void;
+  onAnswerChange: (value: string, id: number | null, ) => void;
   onMarkedForReview: (
-    id: number | undefined,
+    id: number | null,
     value: string,
     answered: boolean,
   ) => void;
@@ -51,7 +51,7 @@ export function QuestionCard({
   ) => {
     const selectedOption = options.find((opt) => opt.text === selectedAnswer);
     onMarkedForReview(
-      selectedOption?.option_id ?? undefined,
+      selectedOption?.option_id ?? null,
       selectedAnswer ?? '',
       answered,
     );
@@ -63,9 +63,9 @@ export function QuestionCard({
   ) => {
     if (selectedAnswer !== null) {
       const selectedOption = options.find((opt) => opt.text === selectedAnswer);
-      onAnswerChange(selectedAnswer, selectedOption?.option_id);
+      onAnswerChange(selectedAnswer, selectedOption?.option_id??null);
     } else {
-      onAnswerChange('', undefined);
+      onAnswerChange('', null);
     }
     onNext();
   };
@@ -91,7 +91,7 @@ export function QuestionCard({
             value={selectedAnswer || ''}
             onValueChange={(value) => {
               const selectedAnswer = options.find((opt) => opt.text === value);
-              onAnswerChange(value, selectedAnswer?.option_id);
+              onAnswerChange(value, selectedAnswer?.option_id??null);
             }}
             className="space-y-4"
           >

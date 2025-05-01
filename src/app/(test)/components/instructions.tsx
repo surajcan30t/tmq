@@ -14,10 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import {
   AlertCircle,
-  CheckCircle,
-  Circle,
   Clock,
-  HelpCircle,
   Loader,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -28,11 +25,13 @@ const Instructions = ({ testId }: { testId: string }) => {
   const [isPending, startTransition] = useTransition();
 
   const searchParams = useSearchParams();
-
+  console.log(testId)
   const handleProceed = () => {
     if (agreed) {
       startTransition(() => {
-        router.push(`/exam/${testId}?exam=${searchParams.get('exam')}`);
+        document.documentElement.requestFullscreen()
+        // router.push(`/exam/${testId}?exam=${searchParams.get('exam')}`);
+        router.push(`/exam/${200}?exam=ODSIC`);
       });
     }
   };

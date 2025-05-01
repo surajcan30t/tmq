@@ -58,7 +58,7 @@ const getExamInfo = async (cookie: string) => {
   if (!response.ok) return;
   if (response.status === 200) {
     const data: ExamLists[] = await response.json();
-    const sortedData: ExamLists[] = data.sort((a:any, b:any) => {
+    const sortedData: ExamLists[] = data.sort((a:ExamLists, b:ExamLists) => {
       const nameA = a.name.toLowerCase()
       const nameB = b.name.toLowerCase()
       return nameA.localeCompare(nameB)
