@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
- 
 
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
@@ -10,7 +9,8 @@ export function middleware(request: NextRequest) {
   if (!isPublicPath && !token) {
     return NextResponse.redirect(new URL('/', request.nextUrl))
   }
-    
+
+  return NextResponse.next()
 }
 
  
