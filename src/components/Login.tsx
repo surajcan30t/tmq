@@ -67,6 +67,10 @@ const Login = () => {
         return;
       }
 
+      if (response.status === 210) {
+        router.replace('/admin/dashboard');
+      }
+
       if (response.status === 200) {
         router.replace('/odsic');
       }

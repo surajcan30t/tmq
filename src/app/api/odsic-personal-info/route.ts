@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     //@ts-expect-error: id exists in payload
     const id: number = tokenData.payload.id;
 
-    const userData = await redis.get(id.toString());
+    const userData = await redis.get(`student:${id.toString()}`);
 
     if (!userData)
       return NextResponse.json({ message: 'No data found' }, { status: 404 });
@@ -82,12 +82,12 @@ export async function POST(request: NextRequest) {
     const body: RequestBody = await request.json();
     const { name, branch, collegeName, contactNo, semester } = body;
 
-    const userData = await redis.get(id.toString());
+    const userData = await redis.get(`student:${id.toString()}`);
 
     if (!userData)
       return NextResponse.json({ message: 'No data found' }, { status: 404 });
     const parsedData = JSON.parse(userData);
-    const loginCount = await redis.incr('loginCount:123');
+    const loginCount = await redis.incr(`loginCount:student:${id.toString()}`);
     const data = {
       ...parsedData,
       name: name,
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       loginCount,
     };
 
-    await redis.set(id.toString(), JSON.stringify(data));
+    await redis.set(`student:${id.toString()}`, JSON.stringify(data));
 
     return NextResponse.json(data, { status: 200 });
   } catch (err) {

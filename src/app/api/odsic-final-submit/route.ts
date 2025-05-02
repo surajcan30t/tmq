@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { redis } from "@/lib/redis";
-import { tokenValidation } from "../../../../services/token-validation-service";
+import { NextRequest, NextResponse } from 'next/server';
+import { redis } from '@/lib/redis';
+import { tokenValidation } from '../../../../services/token-validation-service';
 
 interface RequestBody {
-  testId: number
+  testId: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -32,31 +32,48 @@ export async function POST(request: NextRequest) {
     const body: RequestBody = await request.json();
     const { testId } = body;
     const examUserId = id.toString() + testId.toString();
-    const userData = await redis.get(id.toString());
-    
+    const userData = await redis.get(`student:${id.toString()}`);
+
     if (!userData)
       return NextResponse.json({ message: 'No user found' }, { status: 404 });
     const parsedData = JSON.parse(userData);
-    const data = {
-      ...parsedData,
-      isFinalSubmit: true
-    };
-    
+
     const examData = await redis.get(examUserId);
 
     if (!examData)
       return NextResponse.json({ message: 'No data found' }, { status: 404 });
-    
+
     const parsedExamData = JSON.parse(examData);
     const eData = {
       ...parsedExamData,
-      isFinalSubmit: true
+      isFinalSubmit: true,
     };
 
-    await redis.set(id.toString(), JSON.stringify(data));
+    let score = 0;
+
+    for (const question of parsedExamData.questions) {
+      const correctOptionId = parsedExamData.conf[question.question_id];
+      if (
+        question.answeredOption !== null &&
+        question.answeredOption === correctOptionId
+      ) {
+        score++;
+      }
+    }
+
+    const data = {
+      ...parsedData,
+      isFinalSubmit: true,
+      score,
+    };
+
+    await redis.set(`student:${id.toString()}`, JSON.stringify(data));
     await redis.set(examUserId, JSON.stringify(eData));
 
-    return NextResponse.json({message: 'Exam successfully submitted'}, { status: 200 });
+    return NextResponse.json(
+      { message: 'Exam successfully submitted' },
+      { status: 200 },
+    );
   } catch (err) {
     console.log('::api/odsic-final-submit:: ', err);
     return NextResponse.json(

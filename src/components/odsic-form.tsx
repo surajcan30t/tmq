@@ -39,6 +39,7 @@ interface PersonalInfo {
 }
 
 const OdsicForm = ({data}: {data: PersonalInfo}) => {
+  console.log(data)
   const router = useRouter();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -203,7 +204,7 @@ const OdsicForm = ({data}: {data: PersonalInfo}) => {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? (<Loader className='animate-spin'/>) : `${data.loginCount === 0 ? 'Start' : 'Resume'} Exam`}
+              {isLoading ? (<Loader className='animate-spin'/>) : `${data.loginCount > 0 ? 'Resume' : 'Start'} Exam`}
             </Button>
           </form>
         </Form>
