@@ -70,7 +70,7 @@ const Instructions = ({ testId }: { testId: string }) => {
                   corner of the screen
                   <span className="inline-flex items-center ml-2 text-orange-600 font-medium">
                     <Clock className="h-4 w-4 mr-1" />
-                    <span>00:45:00</span>
+                    <span>00:30:00</span>
                   </span>
                 </p>
               </li>

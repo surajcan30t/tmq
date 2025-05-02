@@ -100,6 +100,26 @@ const MainExam = ({
   
     return () => clearInterval(interval);
   }, []);
+  
+
+  const handleFinalSubmit = async () => {
+    try {
+  
+      const response = await fetch('/api/odsic-final-submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          testId,
+        }),
+      });
+      console.log('parsedresponse   ', response.status)
+      return response.status
+    } catch (error) {
+      console.error('Failed to save data', error);
+    }
+  };
 
   const saveDataToBackend = async () => {
     try {
@@ -194,11 +214,12 @@ const MainExam = ({
     }
   };
 
-  const handleSubmitTest = () => {
+  const handleSubmitTest = async () => {
     saveDataToBackend();
-
+    const status = await handleFinalSubmit()
     setTestCompleted(true);
-    setShowResultDialog(true);
+    if(status === 200)
+      setShowResultDialog(true);
   };
 
   const answeredCount = answers.filter((answer) => answer.id !== null).length;
@@ -261,7 +282,9 @@ const MainExam = ({
       <ResultDialog
         isOpen={showResultDialog}
         onOpenChange={setShowResultDialog}
-        onReturn={() => router.push('/')}
+        onReturn={() => {
+          console.log('redirecting')
+          router.push('/')}}
         // score={score}
         // totalQuestions={testQuestions.length}
         // timeTaken={timeTaken}

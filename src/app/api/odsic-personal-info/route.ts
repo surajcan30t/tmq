@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
       collegeName: parsedData.collegeName,
       contactNo: parsedData.contactNo,
       semester: parsedData.semester,
+      isFinalSubmit: parsedData.isFinalSubmit,
       loginCount: parsedData.loginCount??0
     };
 

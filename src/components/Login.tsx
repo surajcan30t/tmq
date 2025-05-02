@@ -97,7 +97,8 @@ const Login = () => {
                 name="userName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    {/* <FormLabel>Username</FormLabel> */}
+                    <FormLabel>Email ID</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="your.email@example.com"

@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
         collegeName: null,
         contactNo: null,
         semester: null,
+        isFinalSubmit: false,
         createdAt: new Date().toISOString()
       };
 

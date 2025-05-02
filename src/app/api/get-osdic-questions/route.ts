@@ -60,7 +60,17 @@ export async function GET(request: NextRequest) {
     if (cachedData !== null) {
       const parsedCachedData = JSON.parse(cachedData);
       console.log('sent cached data');
-      // console.log(parsedCachedData)
+      console.log(parsedCachedData)
+      if(parsedCachedData.isFinalSubmit){
+        return NextResponse.json(
+          {
+            data: ''
+          },
+          {
+            status: 408
+          }
+        )
+      }
       return NextResponse.json(
         {
           questions: parsedCachedData.questions,

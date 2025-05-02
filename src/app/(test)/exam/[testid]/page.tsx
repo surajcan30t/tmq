@@ -17,7 +17,7 @@ const getQuestions = async (cookie: string, testId: number) => {
     });
     const data = await response.json()
     
-    return data;
+    return {data:data, status: response.status};
   } catch (err) {
     console.error('::exam/page.tsx::\n', err);
   }
@@ -32,13 +32,16 @@ const page = async ({ params }: { params: Promise<{ testid: string }> }) => {
     return redirect('/');
   }
   const questionData = await getQuestions(cookie, parseInt(testid))
+  if (questionData?.status === 408) {
+    return redirect('/');
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4">
       {/* <MainExam testId={testid}
        questions={questionData?.questions}
       /> */}
-      <Exam examData={questionData} testId={testid} />
+      <Exam examData={questionData?.data} testId={testid} />
     </main>
   );
 };
