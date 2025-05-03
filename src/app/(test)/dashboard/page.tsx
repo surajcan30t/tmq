@@ -46,7 +46,8 @@ const getExamInfo = async (cookie: string) => {
     {
       headers: {
         Authorization: `Bearer ${cookie}`
-      }
+      },
+      cache: 'no-cache'
     }
   );
   if (response.status === 500) {

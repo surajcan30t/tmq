@@ -14,9 +14,10 @@ const getQuestions = async (cookie: string, testId: number) => {
       headers: {
         Authorization: `Bearer ${cookie}`,
       },
+      cache: 'no-cache'
     });
     const data = await response.json()
-    
+    console.log('::exam/page.tsx::', response.status)
     return {data:data, status: response.status};
   } catch (err) {
     console.error('::exam/page.tsx::\n', err);

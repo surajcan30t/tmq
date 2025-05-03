@@ -69,11 +69,12 @@ export async function POST(request: NextRequest) {
 
     await redis.set(`student:${id.toString()}`, JSON.stringify(data));
     await redis.set(examUserId, JSON.stringify(eData));
-
-    return NextResponse.json(
+    const response = NextResponse.json(
       { message: 'Exam successfully submitted' },
       { status: 200 },
-    );
+    )
+    response.cookies.delete('auth-token')
+    return response
   } catch (err) {
     console.log('::api/odsic-final-submit:: ', err);
     return NextResponse.json(

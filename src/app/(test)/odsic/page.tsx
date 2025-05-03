@@ -14,10 +14,10 @@ const getPersonalInfo = async (cookie: string) => {
       },
     );
     const data = await response.json();
-    console.log(data);
+    console.log('::odsic/page.tsx::',response.status);
     return data;
   } catch (err) {
-    console.error('::exam/page.tsx::\n', err);
+    console.error('::odsic/page.tsx::\n', err);
     return;
   }
 };
