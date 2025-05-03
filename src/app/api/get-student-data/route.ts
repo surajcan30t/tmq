@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
           branch: student.branch,
           collegeName: student.collegeName,
           contactNo: student.contactNo,
+          semester: student.semester,
           score: student.score
         });
       }
