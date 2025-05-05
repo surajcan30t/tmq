@@ -8,6 +8,7 @@ import { QuestionNavigation } from './question-navigation';
 import { QuestionCard } from './question-card';
 import { ProgressTracker } from './progress-tracker';
 import { TestTimer } from './test-timer';
+import { Loader } from 'lucide-react';
 // import { testQuestions } from '@/misc/sampleQuestions';
 
 interface Answers {
@@ -66,16 +67,19 @@ const MainExam = ({
   timeRemaining: number;
   // stateChange: boolean
 }) => {
-  console.log(timeElapsed)
+  console.log(timeElapsed);
   const [currentQuestion, setCurrentQuestion] = useState(1); // 1-indexed for user display
   const [answers, setAnswers] = useState<Answers[]>(
     Array(questions.length).fill({ id: null, value: null, type: '' }),
   );
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [showResultDialog, setShowResultDialog] = useState(false);
-  const [timeLeftInSeconds, setTimeLeftInSeconds] = useState(timeRemaining * 60);
+  const [timeLeftInSeconds, setTimeLeftInSeconds] = useState(
+    timeRemaining * 60,
+  );
   // const [score, setScore] = useState(0);
   const [testCompleted, setTestCompleted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   // const [timeTaken, setTimeTaken] = useState("00:00");
   const router = useRouter();
 
@@ -97,14 +101,12 @@ const MainExam = ({
     const interval = setInterval(() => {
       saveDataToBackend();
     }, 20000); // 20 seconds
-  
+
     return () => clearInterval(interval);
   }, []);
-  
 
   const handleFinalSubmit = async () => {
     try {
-  
       const response = await fetch('/api/odsic-final-submit', {
         method: 'POST',
         headers: {
@@ -114,8 +116,8 @@ const MainExam = ({
           testId,
         }),
       });
-      console.log('parsedresponse   ', response.status)
-      return response.status
+      console.log('parsedresponse   ', response.status);
+      return response.status;
     } catch (error) {
       console.error('Failed to save data', error);
     }
@@ -125,7 +127,7 @@ const MainExam = ({
     try {
       const localData = window.localStorage.getItem('ExamData');
       const parsedLocalData = localData && JSON.parse(localData);
-  
+
       await fetch('/api/user-exam-response', {
         method: 'POST',
         headers: {
@@ -214,28 +216,42 @@ const MainExam = ({
     }
   };
 
+  const returnHome = () => {
+    if(document.fullscreenElement){
+      document.exitFullscreen()
+    }
+    router.push('/');
+  }
+
   const handleSubmitTest = async () => {
-    saveDataToBackend();
-    const status = await handleFinalSubmit()
-    setTestCompleted(true);
-    if(status === 200)
-      setShowResultDialog(true);
+    try {
+      setIsSubmitting(true);
+      saveDataToBackend();
+      const status = await handleFinalSubmit();
+      setIsSubmitting(false);
+      setTestCompleted(true);
+      if (status === 200) setShowResultDialog(true);
+    } catch {
+      setIsSubmitting(false);
+    }
   };
 
   const answeredCount = answers.filter((answer) => answer.id !== null).length;
   const currentQuestionData = questions[currentQuestion - 1]; // Adjust for 0-indexed array
-
+  if (isSubmitting) {
+    return SubmissionVisual();
+  }
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-1">
       <div className="max-w-6xl mx-auto w-full">
         {/* Header with title and timer */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
           <div className="text-2xl font-bold">Assessment in Progress</div>
-          <TestTimer 
-            initialTime={timeRemaining * 60} 
-            onTimeUp={handleTimeUp} 
+          <TestTimer
+            initialTime={timeRemaining * 60}
+            onTimeUp={handleTimeUp}
             onTick={setTimeLeftInSeconds}
-           />
+          />
         </div>
 
         {/* Progress tracker */}
@@ -282,9 +298,7 @@ const MainExam = ({
       <ResultDialog
         isOpen={showResultDialog}
         onOpenChange={setShowResultDialog}
-        onReturn={() => {
-          console.log('redirecting')
-          router.push('/')}}
+        onReturn={() => returnHome()}
         // score={score}
         // totalQuestions={testQuestions.length}
         // timeTaken={timeTaken}
@@ -294,3 +308,14 @@ const MainExam = ({
 };
 
 export default MainExam;
+
+function SubmissionVisual() {
+  return (
+    <>
+      <div className="w-full h-screen bg-white/50 flex flex-col justify-center items-center">
+        <div>Wait while submitting you exam</div>
+        <Loader className="animate-spin" />
+      </div>
+    </>
+  );
+}

@@ -24,7 +24,7 @@ interface QuestionCardProps {
   question: string;
   options: Option[];
   selectedAnswer: string | null;
-  onAnswerChange: (value: string, id: number | null, ) => void;
+  onAnswerChange: (value: string, id: number | null) => void;
   onMarkedForReview: (
     id: number | null,
     value: string,
@@ -45,10 +45,7 @@ export function QuestionCard({
   onNext,
   onSubmit,
 }: QuestionCardProps) {
-  const handleMarkedForReview = (
-    selectedAnswer: string,
-    answered: boolean,
-  ) => {
+  const handleMarkedForReview = (selectedAnswer: string, answered: boolean) => {
     const selectedOption = options.find((opt) => opt.text === selectedAnswer);
     onMarkedForReview(
       selectedOption?.option_id ?? null,
@@ -58,12 +55,10 @@ export function QuestionCard({
     onNext();
   };
 
-  const handleSaveAndNext = (
-    selectedAnswer: string | null,
-  ) => {
+  const handleSaveAndNext = (selectedAnswer: string | null) => {
     if (selectedAnswer !== null) {
       const selectedOption = options.find((opt) => opt.text === selectedAnswer);
-      onAnswerChange(selectedAnswer, selectedOption?.option_id??null);
+      onAnswerChange(selectedAnswer, selectedOption?.option_id ?? null);
     } else {
       onAnswerChange('', null);
     }
@@ -91,7 +86,7 @@ export function QuestionCard({
             value={selectedAnswer || ''}
             onValueChange={(value) => {
               const selectedAnswer = options.find((opt) => opt.text === value);
-              onAnswerChange(value, selectedAnswer?.option_id??null);
+              onAnswerChange(value, selectedAnswer?.option_id ?? null);
             }}
             className="space-y-4"
           >
@@ -116,24 +111,24 @@ export function QuestionCard({
           </RadioGroup>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between bg-gray-50 py-4 px-6">
-        {selectedAnswer ? (
-          <Button
-            onClick={() => handleMarkedForReview(selectedAnswer, true)}
-            className="gap-2 bg-indigo-600"
-          >
-            Mark for Review
-          </Button>
-        ) : (
-          <Button
-            onClick={() => handleMarkedForReview('', false)}
-            className="gap-2 bg-amber-600"
-          >
-            Mark for Review
-          </Button>
-        )}
+      <CardFooter className="flex flex-col bg-gray-50 py-4 px-6">
+        <div className='w-full flex justify-between'>
+          {selectedAnswer ? (
+            <Button
+              onClick={() => handleMarkedForReview(selectedAnswer, true)}
+              className="gap-2 bg-indigo-600"
+            >
+              Mark for Review
+            </Button>
+          ) : (
+            <Button
+              onClick={() => handleMarkedForReview('', false)}
+              className="gap-2 bg-amber-600"
+            >
+              Mark for Review
+            </Button>
+          )}
 
-        {questionNumber < totalQuestions ? (
           <Button
             onClick={() => handleSaveAndNext(selectedAnswer)}
             className="gap-2 bg-green-600"
@@ -141,15 +136,16 @@ export function QuestionCard({
             Save & Next
             <ChevronRight className="h-4 w-4" />
           </Button>
-        ) : (
+        </div>
+        <div className="mt-5">
           <Button
             onClick={onSubmit}
             className="bg-red-600 hover:bg-red-700 gap-2"
           >
-            Submit Test
+            Finish Exam
             <CheckCircle2 className="h-4 w-4" />
           </Button>
-        )}
+        </div>
       </CardFooter>
     </Card>
   );

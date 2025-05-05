@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 
 const Instructions = ({ testId }: { testId: string }) => {
   const router = useRouter();
-  const [agreed, setAgreed] = useState(false);
+  const [agreed, setAgreed] = useState(true);
   const [isPending, startTransition] = useTransition();
 
   const searchParams = useSearchParams();
@@ -260,7 +260,7 @@ const Instructions = ({ testId }: { testId: string }) => {
               </div>
             </div>
           </CardContent>
-          <CardFooter>
+          {/* <CardFooter>
             <div className="flex items-start space-x-2 pt-4">
               <Checkbox
                 id="terms"
@@ -272,13 +272,13 @@ const Instructions = ({ testId }: { testId: string }) => {
                 proceed with the test.
               </Label>
             </div>
-          </CardFooter>
+          </CardFooter> */}
         </Card>
 
         <div className="grid grid-cols-2 gap-3 mt-8">
           <Button
             variant={'trident'}
-            disabled={agreed}
+            // disabled={agreed}
             onClick={() => router.push('/dashboard')}
             className="bg-purple-700 hover:bg-purple-800 text-white px-8 py-3 text-lg rounded-lg"
           >

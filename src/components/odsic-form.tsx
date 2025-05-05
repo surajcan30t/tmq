@@ -20,6 +20,8 @@ import {
   FormLabel,
   FormMessage,
 } from './ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { diploma_colleges } from '@/misc/list-of-colleges';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Must enter username' }),
@@ -151,12 +153,23 @@ const OdsicForm = ({data}: {data: PersonalInfo}) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>College Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        className="bg-white"
-                        {...field}
-                      />
-                    </FormControl>
+                    <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your college" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {diploma_colleges?.map((item, idx) => (
+                            <SelectItem key={idx} value={item}>
+                              {item}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     <FormMessage />
                   </FormItem>
                 )}
