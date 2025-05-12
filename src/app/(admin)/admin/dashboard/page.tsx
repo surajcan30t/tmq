@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import {StudentData} from '../../components/student-data';
+import StudentDataTable from '../../components/student-table';
 
 export const metadata: Metadata = {
   title: `Test Dashboard`,
@@ -15,7 +16,7 @@ interface StudentDatum {
   collegeName: string | null;
   contactNo: string | null;
   semester: string | null;
-  score: number | null;
+  score: string | null;
 }
 
 const getQuestions = async (cookie: string) => {
@@ -30,7 +31,13 @@ const getQuestions = async (cookie: string) => {
       },
     );
     const data = await response.json();
-    return { data: data, status: response.status };
+    const formattedData = data.students.map((student: StudentDatum, index: number) => ({
+      slNo: index + 1,
+      ...student,
+      score: (student.score)?.toString()?? 'N/A',
+      total: 25
+    }))
+    return { data: formattedData, status: response.status };
   } catch (err) {
     console.error('::/admin/dashboard.tsx::\n', err);
   }
@@ -45,15 +52,12 @@ const page = async () => {
   }
   const studentData = await getQuestions(cookie);
   
-  const result:StudentDatum[] = studentData?.data.students
+  const result:StudentDatum[] = studentData?.data
 
   return (
     <main className="min-h-screen flex justify-center bg-gradient-to-b from-gray-50 to-gray-100 p-4">
-      {/* <pre>{JSON.stringify(studentData?.data.students, null, 2)}</pre> */}
-      <div className='flex flex-col gap-3'>
-        {/* {studentData?.data.students.map((data: StudentDatum) => ( */}
-          <StudentData results={result}/>
-        {/* ))} */}
+      <div className='flex flex-col gap-3 max-w-screen'>
+          {result && <StudentDataTable data={result} />}
       </div>
     </main>
   );
